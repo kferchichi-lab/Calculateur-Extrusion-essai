@@ -1,29 +1,27 @@
 import streamlit as st
 
-# Configuration de la page
+# Configuration de la page pour utiliser toute la largeur et masquer le menu
 st.set_page_config(page_title="Calculateur Extrusion", page_icon="📟", layout="wide")
 
-# CSS pour le style et les barres
+# CSS pour supprimer les marges blanches en haut de page
 st.markdown("""
     <style>
         .block-container {padding-top: 1rem; padding-bottom: 0rem;}
-        .container-barre { width: 100%; background-color: #e0e0e0; border-radius: 5px; margin-bottom: 10px; position: relative; height: 25px;}
-        .barre-lopin { background-color: #808080; height: 100%; border-radius: 5px; transition: width 0.5s;}
-        .barre-limite { background-color: #006400; height: 8px; border-radius: 2px; margin-top: 5px;}
-        .label-barre { font-size: 0.8em; color: #555; margin-bottom: 2px;}
+        div.stButton > button {width: 100%; border-radius: 5px; height: 3em; background-color: #007bff; color: white;}
     </style>
     """, unsafe_allow_html=True)
 
-# --- EN-TÊTE ---
+# --- EN-TÊTE COMPACT ---
 col_logo, col_titre = st.columns([1, 5])
 with col_logo:
     st.write("🏢") 
 with col_titre:
     st.markdown("### NOM DE VOTRE SOCIÉTÉ | <span style='color:gray'>Assistant Extrusion</span>", unsafe_allow_html=True)
 
-# --- SAISIE ---
+# --- SECTION 1 : SAISIE (Sur une seule ligne pour gagner de la place) ---
 st.markdown("##### 📥 Paramètres d'entrée")
 c1, c2, c3, c4 = st.columns(4)
+
 with c1:
     type_billette = st.selectbox("Billette", ["Primaire", "Recyclée"])
 with c2:
@@ -33,6 +31,7 @@ with c3:
 with c4:
     long_demandee = st.number_input("Long. (m)", value=None, format="%.2f", placeholder="0.00")
 
+# --- BOUTON DE CALCUL ---
 if st.button("🧮 CALCULER"):
     if p_m is not None and long_demandee is not None:
         # CALCULS
@@ -42,39 +41,33 @@ if st.button("🧮 CALCULER"):
         poids_lopin = ((p_m * n_ecoulements) * long_demandee) + (poids_lineique_billette * (long_culot_mm / 1000))
         long_lopin_mm = (poids_lopin / poids_lineique_billette) * 1000
         
-        # LIMITE MACHINE
-        LIMITE_MAX = 1100.0
-        # Calcul du pourcentage pour l'affichage (max 100%)
-        pourcentage_lopin = min((long_lopin_mm / LIMITE_MAX) * 100, 100)
-        
-        if long_lopin_mm > LIMITE_MAX:
-            st.error(f"⚠️ TROP LONG : {long_lopin_mm:.2f} mm (Limite {LIMITE_MAX} mm dépassée)")
+        # VÉRIFICATION 1100 mm
+        if long_lopin_mm > 1100:
+            st.markdown(f"""
+                <div style="background-color: #ff4b4b; padding: 15px; border-radius: 10px; text-align: center; color: white;">
+                    <h3 style="margin:0;">⚠️ TROP LONG : {long_lopin_mm:.2f} mm</h3>
+                    <p style="margin:0;">La limite est de 1100 mm.</p>
+                </div>
+            """, unsafe_allow_html=True)
         else:
-            st.markdown("---")
-            col_val, col_visu = st.columns([1, 2])
+            # AFFICHAGE COMPACT DES RÉSULTATS (Sur une seule ligne)
+            st.markdown("##### 📋 Résultats de réglage")
+            res1, res2, res3 = st.columns(3)
             
-            with col_val:
-                st.metric("🎯 LONGUEUR LOPIN", f"{long_lopin_mm:.2f} mm")
-                st.metric("📏 CULOT", f"{long_culot_mm:.2f} mm")
-                st.metric("⚖️ POIDS", f"{poids_lopin:.3f} kg")
-
-            with col_visu:
-                st.markdown("<br>", unsafe_allow_html=True)
-                # Barre Grise (Lopin actuel)
-                st.markdown(f'<div class="label-barre">Lopin actuel : {long_lopin_mm:.2f} mm</div>', unsafe_allow_html=True)
-                st.markdown(f'''
-                    <div class="container-barre">
-                        <div class="barre-lopin" style="width: {pourcentage_lopin}%;"></div>
-                    </div>
-                ''', unsafe_allow_html=True)
-                
-                # Barre Vert Sombre (Limite Cisaille)
-                st.markdown(f'<div class="label-barre">Capacité Tapis Cisaille (Limite : {LIMITE_MAX} mm)</div>', unsafe_allow_html=True)
-                st.markdown('<div class="barre-limite" style="width: 100%;"></div>', unsafe_allow_html=True)
-                
-                st.success("✅ Dimension conforme à la capacité machine.")
+            res1.metric("📏 CULOT (mm)", f"{long_culot_mm:.2f}")
+            res2.metric("⚖️ POIDS (kg)", f"{poids_lopin:.3f}")
+            res3.metric("🎯 LOPIN (mm)", f"{long_lopin_mm:.2f}")
+            
+            st.success("✅ Réglages validés.")
     else:
-        st.warning("⚠️ Veuillez remplir les champs.")
+        st.warning("⚠️ Remplissez toutes les cases.")
 
-# PIED DE PAGE
-st.markdown(f'<div style="position: fixed; bottom: 10px; width:100%; text-align: center; color: gray; font-size: 0.8em;">© 2026 NOM DE VOTRE SOCIÉTÉ</div>', unsafe_allow_html=True)
+# --- PIED DE PAGE ---
+st.markdown(
+    """
+    <div style="position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; color: gray; font-size: 0.8em;">
+        © 2026 <b>NOM DE VOTRE SOCIÉTÉ</b>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
